@@ -19,3 +19,27 @@
   - [ ] 教务系统（需要 VPN）
 - [ ] 能源管理（<http://10.50.2.206>）
   - [ ] 电表（需要 VPN）
+
+## 用法
+
+登陆统一身份认证平台并获取 cookies 是使用其余功能的前置步骤：
+
+```python
+from suep_toolkit import auth
+
+# 第一个参数是想要登陆的服务的 URL，留空即可。
+service = auth.AuthService("", "用户名", "密码")
+# 是否需要输入验证码？
+if service.need_captcha():
+    # 获取并保存验证码:
+    with open("captcha.jpg", "wb") as captcha_image:
+      captcha_image.write(service.get_captcha_image())
+    # 填写验证码:
+    service.set_captcha_code("验证码")
+# 登陆:
+session = service.login()
+# 退出:
+auth.AuthService.logout(session)
+```
+
+`session` 是一个 [`requests.Session`](https://requests.readthedocs.io/en/latest/api/#requests.Session) 对象，存储了必要的 cookies。

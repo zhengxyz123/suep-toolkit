@@ -30,12 +30,12 @@ from bs4 import BeautifulSoup
 from suep_toolkit import user_agent
 
 
-class LoginServiceError(Exception):
+class AuthServiceError(Exception):
     pass
 
 
-class LoginService:
-    """登陆校园网。"""
+class AuthService:
+    """登陆统一身份认证平台。"""
 
     login_url = "https://ids.shiep.edu.cn/authserver/login"
     logout_url = "https://ids.shiep.edu.cn/authserver/logout"
@@ -57,7 +57,7 @@ class LoginService:
         dom = BeautifulSoup(html, features="html.parser")
 
         if "应用未注册" in html:
-            raise LoginServiceError("unregistered application")
+            raise AuthServiceError("unregistered application")
         self._js_ession_id = response.cookies["JSESSIONID_ids2"]
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
         self._form_data = {"username": user_name, "password": password}
@@ -74,7 +74,7 @@ class LoginService:
     def need_captcha(self) -> bool:
         """检查需要登陆的用户是否需要填写验证码。"""
         if self._status != 0:
-            raise LoginServiceError("wrong login step")
+            raise AuthServiceError("wrong login step")
         self._status += 1
 
         # 是否需要填写验证码是动态获取的，其核心逻辑未知。
@@ -117,7 +117,7 @@ class LoginService:
             response.content.startswith(b"\xff\xd8\xff")
             and response.content.endswith(b"\xff\xd9")
         ):
-            raise LoginServiceError("captcha image format should be jpeg")
+            raise AuthServiceError("captcha image format should be jpeg")
         return response.content
 
     def set_captcha_code(self, captcha_code: str) -> None:
@@ -130,9 +130,9 @@ class LoginService:
     def login(self) -> requests.Session:
         """登陆。"""
         if self._need_captcha and "captchaResponse" not in self._form_data:
-            raise LoginServiceError("must provide the captcha code")
+            raise AuthServiceError("must provide the captcha code")
         if self._status != 2:
-            raise LoginServiceError("wrong login step")
+            raise AuthServiceError("wrong login step")
         self._status += 1
 
         jar = requests.cookies.RequestsCookieJar()
@@ -151,7 +151,7 @@ class LoginService:
         if not (
             "iPlanetDirectoryPro" in session.cookies and "CASTGC" in session.cookies
         ):
-            raise LoginServiceError("wrong username or password")
+            raise AuthServiceError("wrong username or password")
         session.cookies.set("JSESSIONID_ids2", self._js_ession_id)
         return session
 
@@ -161,4 +161,4 @@ class LoginService:
         session.get(cls.logout_url, headers={"user-agent": user_agent})
 
 
-__all__ = ("LoginService", "LoginServiceError")
+__all__ = ("AuthService", "AuthServiceError")
