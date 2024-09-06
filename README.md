@@ -33,7 +33,7 @@ service = auth.AuthService("", "用户名", "密码")
 if service.need_captcha():
     # 获取并保存验证码:
     with open("captcha.jpg", "wb") as captcha_image:
-      captcha_image.write(service.get_captcha_image())
+        captcha_image.write(service.get_captcha_image())
     # 填写验证码:
     service.set_captcha_code("验证码")
 # 登陆:
