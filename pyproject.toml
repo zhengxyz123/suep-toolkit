@@ -1,0 +1,18 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "suep_toolkit"
+authors = [{name = "zhengxyz123", email = "zhengxyz123@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dependencies = [
+    "beautifulsoup4 >=4,<5",
+    "requests >=2,<3"
+]
+dynamic = ["version", "description"]
+
+[tool.isort]
+profile = "black"
