@@ -25,4 +25,4 @@ __version__ = version
 
 user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
 
-__all__ = ("user_agent",)
+__all__ = "version", "user_agent"

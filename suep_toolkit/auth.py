@@ -50,13 +50,12 @@ class AuthService:
         response = requests.get(
             self.login_url,
             params={"service": self._service},
-            headers={"user-agent": user_agent},
+            headers={"User-Agent": user_agent},
         )
         response.raise_for_status()
-        html = response.content.decode()
-        dom = BeautifulSoup(html, features="html.parser")
+        dom = BeautifulSoup(response.text, features="html.parser")
 
-        if "应用未注册" in html:
+        if "应用未注册" in response.text:
             raise AuthServiceError("unregistered application")
         self._js_ession_id = response.cookies["JSESSIONID_ids2"]
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
@@ -74,7 +73,7 @@ class AuthService:
     def need_captcha(self) -> bool:
         """检查需要登陆的用户是否需要填写验证码。"""
         if self._status != 0:
-            raise AuthServiceError("wrong login step")
+            raise AuthServiceError("wrong auth step")
         self._status += 1
 
         # 是否需要填写验证码是动态获取的，其核心逻辑未知。
@@ -83,7 +82,7 @@ class AuthService:
         response = requests.get(
             self.need_captcha_url,
             params={"username": self._form_data["username"], "_": int(time.time())},
-            headers={"user-agent": user_agent},
+            headers={"User-Agent": user_agent},
             cookies=jar,
         )
         response.raise_for_status()
@@ -99,7 +98,9 @@ class AuthService:
 
         若无需填写验证码，则返回长度为 0 的字节对象；否则返回一定长度的字节对象，其可直接保存为一个 jpeg 图像。
         """
-        if self._status != 1 or not self._need_captcha:
+        if self._status != 1:
+            raise AuthServiceError("wrong auth step")
+        if self._need_captcha:
             return b""
 
         jar = requests.cookies.RequestsCookieJar()
@@ -107,7 +108,7 @@ class AuthService:
         response = requests.get(
             self.captcha_image_url,
             params={"ts": int(time.time())},
-            headers={"user-agent": user_agent},
+            headers={"User-Agent": user_agent},
             cookies=jar,
         )
         response.raise_for_status()
@@ -132,17 +133,16 @@ class AuthService:
         if self._need_captcha and "captchaResponse" not in self._form_data:
             raise AuthServiceError("must provide the captcha code")
         if self._status != 2:
-            raise AuthServiceError("wrong login step")
-        self._status += 1
+            raise AuthServiceError("wrong auth step")
 
         jar = requests.cookies.RequestsCookieJar()
         jar.set("JSESSIONID_ids2", self._js_ession_id)
         session = requests.Session()
+        session.headers["User-Agent"] = user_agent
         # 由于登陆成功后会重定向到另一个网页而获取不到 cookies，故禁用了重定向。
         response = session.post(
             self.login_url,
             data=self._form_data,
-            headers={"user-agent": user_agent},
             cookies=jar,
             allow_redirects=False,
         )
@@ -158,7 +158,8 @@ class AuthService:
     @classmethod
     def logout(cls, session: requests.Session) -> None:
         """退出。"""
-        session.get(cls.logout_url, headers={"user-agent": user_agent})
+        response = session.get(cls.logout_url)
+        response.raise_for_status()
 
 
-__all__ = ("AuthService", "AuthServiceError")
+__all__ = "AuthService", "AuthServiceError"

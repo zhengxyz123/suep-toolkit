@@ -12,9 +12,9 @@
 
 - [x] 统一身份认证平台（<https://ids.shiep.edu.cn>）
   - [x] 登陆下述各网站
-- [ ] 上海电力大学学生事务及管理系统（<https://estudent.shiep.edu.cn>）
-  - [ ] 基本信息
-  - [ ] 住宿记录
+- [x] 上海电力大学学生事务及管理系统（<https://estudent.shiep.edu.cn>）
+  - [x] 基本信息
+  - [x] 住宿记录
 - [ ] 上海电力大学教务处（<https://jwc.shiep.edu.cn>）
   - [ ] 教务系统（需要 VPN）
 - [ ] 能源管理（<http://10.50.2.206>）
@@ -43,3 +43,16 @@ auth.AuthService.logout(session)
 ```
 
 `session` 是一个 [`requests.Session`](https://requests.readthedocs.io/en/latest/api/#requests.Session) 对象，存储了必要的 cookies。
+
+`suep_toolkit.estudent` 模块提供了访问学生事务及管理系统的功能：
+
+```python
+from suep_toolkit import estudent
+
+# session 即上文 service.login 的返回值，之后不再说明。
+es = estudent.EStudent(session)
+# 获取基本信息：
+es.student_info
+# 获取住宿信息：
+es.accommodation_record
+```
