@@ -28,10 +28,7 @@ import requests.cookies
 from bs4 import BeautifulSoup
 
 from suep_toolkit import user_agent
-
-
-class AuthServiceError(Exception):
-    pass
+from suep_toolkit.util import AuthServiceError
 
 
 class AuthService:
@@ -60,7 +57,7 @@ class AuthService:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        if "应用未注册" in response.text:
+        if dom.find("div", attrs={"class": "errors", "id": "msg"}) is not None:
             raise AuthServiceError("unregistered application")
         self._session_id = response.cookies["JSESSIONID_ids2"]
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
