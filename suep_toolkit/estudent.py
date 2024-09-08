@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 from dataclasses import dataclass
+from typing import Iterable
 
 import requests
 from bs4 import BeautifulSoup
@@ -70,10 +71,7 @@ class EStudent:
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
-        if not (
-            "iPlanetDirectoryPro" in self._session.cookies
-            and "CASTGC" in self._session.cookies
-        ):
+        if "iPlanetDirectoryPro" not in self._session.cookies:
             raise AuthServiceError("must login first")
 
         response = self._session.get(self.estudent_url)
@@ -119,21 +117,19 @@ class EStudent:
         )
 
     @property
-    def accommodation_record(self) -> tuple[RoomInfo]:
+    def accommodation_record(self) -> Iterable[RoomInfo]:
         """获取住宿记录。"""
         response = self._session.get(self.accommodation_record_url)
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        result = []
         for tr_tag in dom.find_all("tr"):
             if len(tr_tag.find_all("td")) == 0:
                 continue
             info = [tag.text for tag in tr_tag.find_all("td")]
             info[3] = int(info[3])
             info[4] = not info[4] == "无"
-            result.append(RoomInfo(*info))
-        return tuple(result)
+            yield RoomInfo(*info)
 
 
 __all__ = "StudentInfo", "RoomInfo", "EStudent"

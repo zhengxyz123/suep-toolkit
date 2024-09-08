@@ -43,13 +43,18 @@ class AuthService:
     captcha_image_url = "https://ids.shiep.edu.cn/authserver/captcha.html"
 
     def __init__(
-        self, service: str, user_name: str, password: str, remember_me: bool = False
+        self,
+        service: str,
+        user_name: str,
+        password: str,
+        remember_me: bool = False,
+        **kwargs
     ) -> None:
         self._service = service
 
         response = requests.get(
             self.login_url,
-            params={"service": self._service},
+            params={"service": self._service} | kwargs,
             headers={"User-Agent": user_agent},
         )
         response.raise_for_status()
@@ -57,7 +62,7 @@ class AuthService:
 
         if "应用未注册" in response.text:
             raise AuthServiceError("unregistered application")
-        self._js_ession_id = response.cookies["JSESSIONID_ids2"]
+        self._session_id = response.cookies["JSESSIONID_ids2"]
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
         self._form_data = {"username": user_name, "password": password}
         if remember_me:
@@ -78,7 +83,7 @@ class AuthService:
 
         # 是否需要填写验证码是动态获取的，其核心逻辑未知。
         jar = requests.cookies.RequestsCookieJar()
-        jar.set("JSESSIONID_ids2", self._js_ession_id)
+        jar.set("JSESSIONID_ids2", self._session_id)
         response = requests.get(
             self.need_captcha_url,
             params={"username": self._form_data["username"], "_": int(time.time())},
@@ -104,7 +109,7 @@ class AuthService:
             return b""
 
         jar = requests.cookies.RequestsCookieJar()
-        jar.set("JSESSIONID_ids2", self._js_ession_id)
+        jar.set("JSESSIONID_ids2", self._session_id)
         response = requests.get(
             self.captcha_image_url,
             params={"ts": int(time.time())},
@@ -135,16 +140,12 @@ class AuthService:
         if self._status != 2:
             raise AuthServiceError("wrong auth step")
 
-        jar = requests.cookies.RequestsCookieJar()
-        jar.set("JSESSIONID_ids2", self._js_ession_id)
         session = requests.Session()
         session.headers["User-Agent"] = user_agent
-        # 由于登陆成功后会重定向到另一个网页而获取不到 cookies，故禁用了重定向。
+        session.cookies.set("JSESSIONID_ids2", self._session_id)
         response = session.post(
             self.login_url,
             data=self._form_data,
-            cookies=jar,
-            allow_redirects=False,
         )
         response.raise_for_status()
 
@@ -152,7 +153,6 @@ class AuthService:
             "iPlanetDirectoryPro" in session.cookies and "CASTGC" in session.cookies
         ):
             raise AuthServiceError("wrong username or password")
-        session.cookies.set("JSESSIONID_ids2", self._js_ession_id)
         return session
 
     @classmethod
