@@ -45,7 +45,7 @@ class AuthService:
         user_name: str,
         password: str,
         remember_me: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._service = service
 
@@ -159,4 +159,4 @@ class AuthService:
         response.raise_for_status()
 
 
-__all__ = "AuthService", "AuthServiceError"
+__all__ = ("AuthService",)

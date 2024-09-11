@@ -20,37 +20,4 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import requests
-from bs4 import BeautifulSoup
-from requests.exceptions import Timeout
-
-from suep_toolkit.util import AuthServiceError, VPNError
-
-
-class ECard:
-    """一卡通服务。"""
-
-    auth_url = "http://10.168.103.76/sfrzwhlgportalHome.action"
-
-    def __init__(self, session: requests.Session) -> None:
-        self._session = session
-        # 设置 5 秒的超时检测提醒用户应该开启 VPN。
-        try:
-            response = self._session.get(self.auth_url, timeout=5)
-        except Timeout as error:
-            raise VPNError(
-                "response time too long, maybe you don't turn on the VPN"
-            ) from error
-        response.raise_for_status()
-        dom = BeautifulSoup(response.text, features="html.parser")
-
-        if dom.find("div", attrs={"class": "auth_page_wrapper"}) is not None:
-            raise AuthServiceError("must login first")
-        form_data = {}
-        for element in dom.find_all("input", attrs={"type": "hidden"}):
-            form_data[element["name"]] = element["value"]
-        response = self._session.post(self.auth_url, data=form_data)
-        response.raise_for_status()
-
-
-__all__ = ("ECard",)
+from suep_toolkit.ehall.ecard import ECard
