@@ -4,6 +4,8 @@
 
 各位上海电力大学的学子们，**上电工具箱**（suep-toolkit）将上海电力大学提供的学生事务及管理系统、教务系统和能源管理等分散在各处的系统整合到一个 Python 包中，方便大家使用。
 
+我的博客《[论上海电力大学校园网](https://zhengxyz123.github.io/coding/suep-website/)》详细讨论了各系统的前端逻辑。
+
 > **请注意**：suep-toolkit 的原理是访问相对应的网站来获取、修改数据。若某系统需要连接 VPN 才能使用，则使用本工具箱的对应功能时也要打开 VPN。
 >
 > 建议使用 EasyConnect 的开源替代 [EasierConnect](https://github.com/TeamSUEP/EasierConnect)。

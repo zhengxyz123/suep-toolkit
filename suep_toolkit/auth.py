@@ -48,10 +48,11 @@ class AuthService:
         **kwargs,
     ) -> None:
         self._service = service
+        self._kwargs = kwargs
 
         response = requests.get(
             self.login_url,
-            params={"service": self._service} | kwargs,
+            params={"service": self._service} | self._kwargs,
             headers={"User-Agent": user_agent},
         )
         response.raise_for_status()
@@ -142,9 +143,11 @@ class AuthService:
         session.cookies.set("JSESSIONID_ids2", self._session_id)
         response = session.post(
             self.login_url,
+            params={"service": self._service} | self._kwargs,
             data=self._form_data,
         )
-        response.raise_for_status()
+        if not self._service.startswith("http://10.50.2.206:80"):
+            response.raise_for_status()
 
         if not (
             "iPlanetDirectoryPro" in session.cookies and "CASTGC" in session.cookies
