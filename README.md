@@ -39,20 +39,19 @@ if service.need_captcha():
     # 填写验证码:
     service.set_captcha_code("验证码")
 # 登陆:
-session = service.login()
+service.login()
 # 退出:
-auth.AuthService.logout(session)
+service.logout()
 ```
 
-`session` 是一个 [`requests.Session`](https://requests.readthedocs.io/en/latest/api/#requests.Session) 对象，存储了必要的 cookies。
+`AuthService` 有唯一的属性 `AuthService.session`，它是一个 [`requests.Session`](https://requests.readthedocs.io/en/latest/api/#requests.Session) 对象，存储了必要的 cookies。
 
 `suep_toolkit.estudent` 模块提供了访问学生事务及管理系统的功能：
 
 ```python
 from suep_toolkit import estudent
 
-# session 即上文 service.login 的返回值，之后不再说明。
-es = estudent.EStudent(session)
+es = estudent.EStudent(service.session)
 # 获取基本信息：
 es.student_info
 # 获取住宿信息：

@@ -24,7 +24,6 @@
 import time
 
 import requests
-import requests.cookies
 from bs4 import BeautifulSoup
 
 from suep_toolkit import user_agent
@@ -50,17 +49,19 @@ class AuthService:
         self._service = service
         self._kwargs = kwargs
 
-        response = requests.get(
+        self._session = requests.Session()
+        self._session.headers["User-Agent"] = user_agent
+        if self._service:
+            self._session.get(self._service).raise_for_status()
+        response = self._session.get(
             self.login_url,
             params={"service": self._service} | self._kwargs,
-            headers={"User-Agent": user_agent},
         )
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
         if dom.find("div", attrs={"class": "errors", "id": "msg"}) is not None:
             raise AuthServiceError("unregistered application")
-        self._session_id = response.cookies["JSESSIONID_ids2"]
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
         self._form_data = {"username": user_name, "password": password}
         if remember_me:
@@ -80,13 +81,9 @@ class AuthService:
         self._status += 1
 
         # 是否需要填写验证码是动态获取的，其核心逻辑未知。
-        jar = requests.cookies.RequestsCookieJar()
-        jar.set("JSESSIONID_ids2", self._session_id)
-        response = requests.get(
+        response = self._session.get(
             self.need_captcha_url,
             params={"username": self._form_data["username"], "_": int(time.time())},
-            headers={"User-Agent": user_agent},
-            cookies=jar,
         )
         response.raise_for_status()
 
@@ -106,13 +103,9 @@ class AuthService:
         if self._need_captcha:
             return b""
 
-        jar = requests.cookies.RequestsCookieJar()
-        jar.set("JSESSIONID_ids2", self._session_id)
-        response = requests.get(
+        response = self._session.get(
             self.captcha_image_url,
             params={"ts": int(time.time())},
-            headers={"User-Agent": user_agent},
-            cookies=jar,
         )
         response.raise_for_status()
 
@@ -131,35 +124,32 @@ class AuthService:
             self._form_data["captchaResponse"] = captcha_code
             self._status += 1
 
-    def login(self) -> requests.Session:
+    def login(self) -> None:
         """登陆。"""
         if self._need_captcha and "captchaResponse" not in self._form_data:
             raise AuthServiceError("must provide the captcha code")
         if self._status != 2:
             raise AuthServiceError("wrong auth step")
 
-        session = requests.Session()
-        session.headers["User-Agent"] = user_agent
-        session.cookies.set("JSESSIONID_ids2", self._session_id)
-        response = session.post(
+        self._session.post(
             self.login_url,
             params={"service": self._service} | self._kwargs,
             data=self._form_data,
-        )
-        if not self._service.startswith("http://10.50.2.206:80"):
-            response.raise_for_status()
+        ).raise_for_status()
 
         if not (
-            "iPlanetDirectoryPro" in session.cookies and "CASTGC" in session.cookies
+            "iPlanetDirectoryPro" in self._session.cookies
+            and "CASTGC" in self._session.cookies
         ):
             raise AuthServiceError("wrong username or password")
-        return session
 
-    @classmethod
-    def logout(cls, session: requests.Session) -> None:
-        """退出。"""
-        response = session.get(cls.logout_url)
-        response.raise_for_status()
+    def logout(self) -> None:
+        """退出登陆。"""
+        self._session.get(self.logout_url).raise_for_status()
+
+    @property
+    def session(self) -> requests.Session:
+        return self._session
 
 
 __all__ = ("AuthService",)

@@ -94,6 +94,8 @@ class EStudent:
         college = dom.find_all("input", {"name": "ErJXY"})[0]["value"]
         class_ = dom.find_all("input", {"name": "BanJi"})[0]["value"]
         level = dom.find_all("input", {"name": "CengCi"})[0]["value"]
+        # 请跟我读：学（xue）制（zhi）！
+        # 这么明显的一个错误放在这里这么多年愣是没有改！
         length_of_schooling = int(dom.find_all("input", {"name": "XueZi"})[0]["value"])
         grade = dom.find_all("input", {"name": "SuoZNJ"})[0]["value"]
         counselor_id = dom.find_all("input", {"name": "FuDYGH"})[0]["value"]
