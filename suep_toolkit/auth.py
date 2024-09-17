@@ -74,6 +74,10 @@ class AuthService:
         self._status = 0
         self._need_captcha = False
 
+    @property
+    def session(self) -> requests.Session:
+        return self._session
+
     def need_captcha(self) -> bool:
         """检查需要登陆的用户是否需要填写验证码。"""
         if self._status != 0:
@@ -146,10 +150,6 @@ class AuthService:
     def logout(self) -> None:
         """退出登陆。"""
         self._session.get(self.logout_url).raise_for_status()
-
-    @property
-    def session(self) -> requests.Session:
-        return self._session
 
 
 __all__ = ("AuthService",)

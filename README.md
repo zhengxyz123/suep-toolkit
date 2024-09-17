@@ -21,6 +21,7 @@
   - [ ] 教务系统（需要 VPN）
 - [ ] 一站式办事大厅（<https://ehall.shiep.edu.cn>）
   - [ ] 一卡通服务
+- [x] 能源管理（<http://10.50.2.206>，需要 VPN）
 
 ## 用法
 
@@ -55,5 +56,37 @@ es = estudent.EStudent(service.session)
 # 获取基本信息：
 es.student_info
 # 获取住宿信息：
-es.accommodation_record
+for item in es.accommodation_record:
+    print(item)
 ```
+
+`suep_toolkit.electricity` 提供了访问能源管理系统的功能。
+
+无论之前登陆与否，访问能源管理系统都需要再次登陆：
+
+```python
+# 第一个参数必须与下面一行所展示的精确相符，都为 22 个字符！
+# 如果遗漏了末尾斜杠，则不能成功
+service = auth.AuthService("http://10.50.2.206:80/", "用户名", "密码", renew="true")
+```
+
+登陆成功之后，我们便能正常访问能源管理系统：
+
+```python
+from suep_toolkit import electricity
+
+em = electricity.ElectricityManagement(service.session)
+# 获取电表参数：
+em.meter_state
+# 要充值的电量，单位为千瓦时，类型为正整数
+kwh = 100
+# 充值电费：
+em.recharge("楼号", "房间号", kwh)
+# 给自己的宿舍充值电费：
+em.recharge_my_room(kwh)
+# 获取历次的电表充值账单：
+for item in em.recharge_info:
+    print(item)
+```
+
+**若充值电费成功会扣除校园卡里面的钱，请慎用充值功能！**

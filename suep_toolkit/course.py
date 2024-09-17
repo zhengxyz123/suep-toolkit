@@ -31,6 +31,10 @@ class CourseManagement:
     """教学管理系统。"""
 
     login_url = "https://jw.shiep.edu.cn/eams/login.action"
+    course_table1_url = "https://jw.shiep.edu.cn/eams/courseTableForStd.action"
+    course_table2_url = (
+        "https://jw.shiep.edu.cn/eams/courseTableForStd!courseTable.action"
+    )
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
