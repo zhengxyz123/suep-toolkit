@@ -22,10 +22,14 @@
 
 
 class AuthServiceError(Exception):
+    """当未登陆或登陆失败时引发此异常。"""
+
     pass
 
 
 class VPNError(Exception):
+    """当疑似未开启 VPN 时引发此异常。"""
+
     pass
 
 

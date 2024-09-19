@@ -71,12 +71,12 @@ class EStudent:
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
-        if "iPlanetDirectoryPro" not in self._session.cookies:
-            raise AuthServiceError("must login first")
-
         response = self._session.get(self.estudent_url)
         response.raise_for_status()
-        self._dom = BeautifulSoup(response.text, features="html.parser")
+        dom = BeautifulSoup(response.text, features="html.parser")
+
+        if dom.find("div", attrs={"class": "auth_page_wrapper"}) is not None:
+            raise AuthServiceError("must login first")
 
     @property
     def student_info(self) -> StudentInfo:

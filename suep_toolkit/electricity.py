@@ -20,9 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from datetime import datetime
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Iterable
 
 import requests
