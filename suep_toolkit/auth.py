@@ -40,22 +40,18 @@ class AuthService:
 
     def __init__(
         self,
-        service: str,
         user_name: str,
         password: str,
         remember_me: bool = False,
         **kwargs,
     ) -> None:
-        self._service = service
         self._kwargs = kwargs
 
         self._session = requests.Session()
         self._session.headers["User-Agent"] = user_agent
-        if self._service:
-            self._session.get(self._service).raise_for_status()
         response = self._session.get(
             self.login_url,
-            params={"service": self._service} | self._kwargs,
+            params=self._kwargs,
         )
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
@@ -140,7 +136,7 @@ class AuthService:
 
         response = self._session.post(
             self.login_url,
-            params={"service": self._service} | self._kwargs,
+            params=self._kwargs,
             data=self._form_data,
         )
         response.raise_for_status()

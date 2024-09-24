@@ -30,8 +30,7 @@
 ```python
 from suep_toolkit import auth
 
-# 第一个参数是想要登陆的服务的 URL，留空即可。
-service = auth.AuthService("", "用户名", "密码")
+service = auth.AuthService("用户名", "密码")
 # 是否需要输入验证码？
 if service.need_captcha():
     # 获取并保存验证码:
@@ -65,9 +64,8 @@ for item in es.accommodation_record:
 无论之前登陆与否，访问能源管理系统都需要再次登陆：
 
 ```python
-# 第一个参数必须与下面一行所展示的精确相符，都为 22 个字符！
-# 如果遗漏了末尾斜杠，则不能成功
-service = auth.AuthService("http://10.50.2.206:80/", "用户名", "密码", renew="true")
+# service 必须与下面一行所展示的精确相符，都为 22 个字符！
+service = auth.AuthService("用户名", "密码", service="http://10.50.2.206:80/", renew="true")
 ```
 
 登陆成功之后，我们便能正常访问能源管理系统：
@@ -80,8 +78,8 @@ em = electricity.ElectricityManagement(service.session)
 em.meter_state
 # 要充值的电量，单位为千瓦时，类型为正整数
 kwh = 100
-# 充值电费：
-em.recharge("楼号", "房间号", kwh)
+# 充值电费（以一号学生公寓的 A101 房间为例）：
+em.recharge("C1", "A101", kwh)
 # 给自己的宿舍充值电费：
 em.recharge_my_room(kwh)
 # 获取历次的电表充值账单：
