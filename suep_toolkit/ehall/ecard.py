@@ -22,9 +22,8 @@
 
 import requests
 from bs4 import BeautifulSoup
-from requests.exceptions import Timeout
 
-from suep_toolkit.util import AuthServiceError, VPNError
+from suep_toolkit.util import AuthServiceError, VPNError, test_network
 
 
 class ECard:
@@ -34,13 +33,11 @@ class ECard:
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
-        # 设置 5 秒的超时检测提醒用户应该开启 VPN。
-        try:
-            response = self._session.get(self.auth_url, timeout=5)
-        except Timeout as error:
+        if not test_network():
             raise VPNError(
-                "response time too long, maybe you don't turn on the VPN"
-            ) from error
+                "you are not connected to the campus network, please turn on vpn"
+            )
+        response = self._session.get(self.auth_url)
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 

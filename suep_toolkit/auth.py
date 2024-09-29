@@ -124,29 +124,24 @@ class AuthService:
             self._form_data["captchaResponse"] = captcha_code
             self._status += 1
 
-    def login(self) -> requests.Response:
-        """登陆。
-
-        若登陆成功，则该方法返回一个执行登陆操作的响应对象。
-        """
+    def login(self):
+        """登陆。"""
         if self._need_captcha and "captchaResponse" not in self._form_data:
             raise AuthServiceError("must provide the captcha code")
         if self._status != 2:
             raise AuthServiceError("wrong auth step")
 
-        response = self._session.post(
+        self._session.post(
             self.login_url,
             params=self._kwargs,
             data=self._form_data,
-        )
-        response.raise_for_status()
+        ).raise_for_status()
 
         if not (
             "iPlanetDirectoryPro" in self._session.cookies
             and "CASTGC" in self._session.cookies
         ):
             raise AuthServiceError("wrong username or password")
-        return response
 
     def logout(self) -> None:
         """退出登陆。"""

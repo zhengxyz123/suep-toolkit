@@ -20,7 +20,7 @@
 - [ ] 上海电力大学教务处（<https://jwc.shiep.edu.cn>）
   - [ ] 教务系统（需要 VPN）
 - [ ] 一站式办事大厅（<https://ehall.shiep.edu.cn>）
-  - [ ] 一卡通服务
+  - [ ] 一卡通服务（需要 VPN）
 - [x] 能源管理（<http://10.50.2.206>，需要 VPN）
 
 ## 用法
@@ -67,6 +67,8 @@ for item in es.accommodation_record:
 # service 必须与下面一行所展示的精确相符，都为 22 个字符！
 service = auth.AuthService("用户名", "密码", service="http://10.50.2.206:80/", renew="true")
 ```
+
+> 登陆时会有大概率跳转到不存在的地址 `http://10.50.2.206:80/undefined` 并引发错误。此时 cookies 已经设置完成，忽略错误即可。
 
 登陆成功之后，我们便能正常访问能源管理系统：
 
