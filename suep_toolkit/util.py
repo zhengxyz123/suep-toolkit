@@ -42,7 +42,7 @@ def test_network(timeout: float = 0.5) -> bool:
 
     若超时时间小于 0.5 秒，则可能会有误报。
     """
-    ip_addrs = ["10.50.2.206", "10.168.103.76", "10.166.18.114", "10.166.19.26"]
+    ip_addrs = ["10.50.2.206", "10.166.18.114", "10.166.19.26", "10.168.103.76"]
     test_result = Queue()
 
     def test_helper(addr: str) -> None:

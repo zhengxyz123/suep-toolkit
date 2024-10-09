@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 import requests
 from bs4 import BeautifulSoup
@@ -85,22 +85,22 @@ class EStudent:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        student_number = dom.find_all("input", {"name": "XueHao"})[0]["value"]
-        name = dom.find_all("input", {"name": "XingMing"})[0]["value"]
-        gender = dom.find_all("input", {"name": "XingBie"})[0]["value"]
-        id_number = dom.find_all("input", {"name": "ShenFZH"})[0]["value"]
-        nation = dom.find_all("input", {"name": "MinZu"})[0]["value"]
-        field = dom.find_all("input", {"name": "ZhuanYe"})[0]["value"]
-        college = dom.find_all("input", {"name": "ErJXY"})[0]["value"]
-        class_ = dom.find_all("input", {"name": "BanJi"})[0]["value"]
-        level = dom.find_all("input", {"name": "CengCi"})[0]["value"]
+        student_number = dom.select("input[name=XueHao]")[0].attrs["value"]
+        name = dom.select("input[name=XingMing]")[0].attrs["value"]
+        gender = dom.select("input[name=XingBie]")[0].attrs["value"]
+        id_number = dom.select("input[name=ShenFZH]")[0].attrs["value"]
+        nation = dom.select("input[name=MinZu]")[0].attrs["value"]
+        field = dom.select("input[name=ZhuanYe]")[0].attrs["value"]
+        college = dom.select("input[name=ErJXY]")[0].attrs["value"]
+        class_ = dom.select("input[name=BanJi]")[0].attrs["value"]
+        level = dom.select("input[name=CengCi]")[0].attrs["value"]
         # 请跟我读：学（xue）制（zhi）！
         # 这么明显的一个错误放在这里这么多年愣是没有改！
-        length_of_schooling = int(dom.find_all("input", {"name": "XueZi"})[0]["value"])
-        grade = dom.find_all("input", {"name": "SuoZNJ"})[0]["value"]
-        counselor_id = dom.find_all("input", {"name": "FuDYGH"})[0]["value"]
-        counselor_name = dom.find_all("input", {"name": "FuDYXM"})[0]["value"]
-        status = dom.find_all("option", {"selected": "selected"})[0].text
+        length_of_schooling = int(dom.select("input[name=XueZi]")[0].attrs["value"])
+        grade = dom.select("input[name=SuoZNJ]")[0].attrs["value"]
+        counselor_id = dom.select("input[name=FuDYGH]")[0].attrs["value"]
+        counselor_name = dom.select("input[name=FuDYXM]")[0].attrs["value"]
+        status = dom.select("option[selected=selected]")[0].text
         return StudentInfo(
             student_number,
             name,
@@ -125,10 +125,10 @@ class EStudent:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        for tr_tag in dom.find_all("tr"):
-            if len(tr_tag.find_all("td")) == 0:
+        for line in dom.select("table>tr"):
+            if len(line.select("th")) > 0:
                 continue
-            info = [tag.text for tag in tr_tag.find_all("td")]
+            info: list[Any] = [tag.text for tag in line.select("td")]
             info[3] = int(info[3])
             info[4] = not info[4] == "无"
             yield RoomInfo(*info)
