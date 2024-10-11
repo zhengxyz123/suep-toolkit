@@ -20,8 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from typing import Iterable
 
 import requests
@@ -39,6 +40,15 @@ class AccountInfo:
 
 
 @dataclass
+class CardStatus:
+    """校园卡状态。"""
+
+    reminder: float
+    frozen: bool
+    lost: bool
+
+
+@dataclass
 class CardTransaction:
     """校园卡流水。"""
 
@@ -50,6 +60,8 @@ class ECard:
 
     auth_url = "http://10.168.103.76/sfrzwhlgportalHome.action"
     account_select_url = "http://10.168.103.76/accounttodayTrjn.action"
+    card_status_url = "http://10.168.103.76/accountcardUser.action"
+    today_transaction_url = "http://10.168.103.76/accounttodatTrjnObject.action"
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
@@ -62,11 +74,11 @@ class ECard:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        if dom.find("div", attrs={"class": "auth_page_wrapper"}) is not None:
+        if len(dom.select("div[class=auth_page_wrapper]")) > 0:
             raise AuthServiceError("must login first")
         form_data = {}
-        for element in dom.find_all("input", attrs={"type": "hidden"}):
-            form_data[element["name"]] = element["value"]
+        for element in dom.select("input[type=hidden]"):
+            form_data[element.attrs["name"]] = element.attrs["value"]
         response = self._session.post(self.auth_url, data=form_data)
         response.raise_for_status()
 
@@ -89,6 +101,23 @@ class ECard:
         self._account_info = tuple(result)
         yield from self._account_info
 
+    @property
+    def status(self) -> CardStatus:
+        response = self._session.get(self.card_status_url)
+        response.raise_for_status()
+        dom = BeautifulSoup(response.text, features="html.parser")
+        text = (
+            dom.text.replace("\n", "")
+            .replace("\t", "")
+            .replace("\xa0", "")
+            .replace(" ", "")
+        )
+
+        reminder = float(re.search(r"余额：(\d+\.\d+)元", text).group(1))
+        frozen = re.search(r"冻结状态：(.{2})", text).group(1) != "正常"
+        lost = re.search(r"挂失状态：(.{2})", text).group(1) != "正常"
+        return CardStatus(reminder, frozen, lost)
+
     def get_transaction(
         self,
         start_date: date,
@@ -106,7 +135,17 @@ class ECard:
             return self._get_history_transaction(start_date, end_date, account)
 
     def _get_today_transaction(self, account: AccountInfo) -> Iterable[CardTransaction]:
-        yield CardTransaction()
+        response = self._session.post(
+            self.today_transaction_url,
+            data={"account": account.id, "inputObject": "all"},
+        )
+        response.raise_for_status()
+        dom = BeautifulSoup(response.text, features="html.parser")
+
+        pages_info = dom.select("tr.bl>td>div[align=center]")[0].text
+        page_count = int(re.search(r"共(\d+)页", pages_info).group(1))
+        for page in range(page_count + 1):
+            yield CardTransaction()
 
     def _get_history_transaction(
         self, start_date: date, end_date: date, account: AccountInfo

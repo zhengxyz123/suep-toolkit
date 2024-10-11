@@ -44,7 +44,7 @@ class CloudDrive:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        if dom.find("div", attrs={"class": "auth_page_wrapper"}) is not None:
+        if len(dom.select("div[class=auth_page_wrapper]")) > 0:
             raise AuthServiceError("must login first")
 
 

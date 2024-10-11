@@ -56,7 +56,7 @@ class AuthService:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        if dom.find("div", attrs={"class": "errors", "id": "msg"}) is not None:
+        if len(dom.select("div#msg.errors")) > 0:
             raise AuthServiceError("unregistered application")
         # 以下字典存储的是 web 端登陆界面中表单里的各个字段名和值。
         self._form_data = {"username": user_name, "password": password}
@@ -64,8 +64,8 @@ class AuthService:
             self._form_data["rememberMe"] = "on"
         # 获取不在浏览器中显示的 input 标签的字段名和值，它们对于登陆来说也是必须的。
         # 这些值可能是随机的生成的，需要解析 HTML 并获取。
-        for element in dom.find_all("input", attrs={"type": "hidden"}):
-            self._form_data[element["name"]] = element["value"]
+        for element in dom.select("input[type=hidden]"):
+            self._form_data[element.attrs["name"]] = element.attrs["value"]
 
         self._status = 0
         self._need_captcha = False

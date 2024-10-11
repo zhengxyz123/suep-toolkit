@@ -25,6 +25,8 @@
 
 ## 用法
 
+### 统一身份认证平台
+
 登陆统一身份认证平台并获取 cookies 是使用其余功能的前置步骤：
 
 ```python
@@ -46,6 +48,8 @@ service.logout()
 
 `AuthService` 有唯一的属性 `AuthService.session`，它是一个 [`requests.Session`](https://requests.readthedocs.io/en/latest/api/#requests.Session) 对象，存储了必要的 cookies。
 
+### 学生事务及管理系统
+
 `suep_toolkit.estudent` 模块提供了访问学生事务及管理系统的功能：
 
 ```python
@@ -58,6 +62,8 @@ es.student_info
 for item in es.accommodation_record:
     print(item)
 ```
+
+### 能源管理
 
 `suep_toolkit.electricity` 提供了访问能源管理系统的功能。
 
@@ -90,3 +96,22 @@ for item in em.recharge_info:
 ```
 
 **若充值电费成功会扣除校园卡里面的钱，请慎用充值功能！**
+
+### 一站式办事大厅
+
+`suep_toolkit.ehall` 的子模块可以访问一站式办事大厅中的一些应用。
+
+#### 一卡通服务
+
+`suep_toolkit.ehall.ecard` 可以查询自己的一卡通状态及消费流水：
+
+```python
+from suep_toolkit.ehall import ecard
+
+my_card = ecard.ECard(service.session)
+# 获取一卡通状态，包括余额以及冻结、挂失状态：
+my_card.status
+# 获取账号列表，不过正常情况下每人只有一个账号：
+for account in my_card.account:
+    print(account)
+```
