@@ -13,15 +13,15 @@
 ## 已经实现的功能
 
 - [x] 统一身份认证平台（<https://ids.shiep.edu.cn>）
-  - [x] 登陆下述各网站
-- [x] 上海电力大学学生事务及管理系统（<https://estudent.shiep.edu.cn>）
-  - [x] 基本信息
-  - [x] 住宿记录
-- [ ] 上海电力大学教务处（<https://jwc.shiep.edu.cn>）
-  - [ ] 教务系统（需要 VPN）
+- [x] 学生事务及管理系统（<https://estudent.shiep.edu.cn>）
+- [ ] 教务处（<https://jwc.shiep.edu.cn>）
+  - [x] 教学周显示
+  - [ ] 教学管理信息系统（需要 VPN）
 - [ ] 一站式办事大厅（<https://ehall.shiep.edu.cn>）
   - [ ] 一卡通服务（需要 VPN）
 - [x] 能源管理（<http://10.50.2.206>，需要 VPN）
+- [ ] 上电云盘（<https://pan.shiep.edu.cn>, 需要 VPN） 
+- [x] 其它小工具
 
 ## 用法
 
@@ -106,6 +106,7 @@ for item in em.recharge_info:
 `suep_toolkit.ehall.ecard` 可以查询自己的一卡通状态及消费流水：
 
 ```python
+from datetime import date
 from suep_toolkit.ehall import ecard
 
 my_card = ecard.ECard(service.session)
@@ -114,4 +115,22 @@ my_card.status
 # 获取账号列表，不过正常情况下每人只有一个账号：
 for account in my_card.account:
     print(account)
+# 获取流水：
+for transaction in my_card.get_transaction(date.today()):
+    print(transaction)
+```
+
+`get_transaction` 方法比较复杂，可查看文档字符串获取更详细的用法。
+
+### 其它小工具
+
+`suep_toolkit.util` 提供了一些有用的小玩意儿：
+
+```python
+from suep_toolkit import util
+
+# 测试设备是否连接到校园网：
+util.test_network()
+# 返回当前教学周：
+util.semester_week()
 ```

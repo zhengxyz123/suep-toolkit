@@ -21,8 +21,9 @@
 # SOFTWARE.
 
 import re
+import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Iterable
 
 import requests
@@ -52,7 +53,12 @@ class CardStatus:
 class CardTransaction:
     """校园卡流水。"""
 
-    pass
+    time: datetime
+    type: str
+    shop_name: str
+    amount: float
+    status: str
+    comment: str
 
 
 class ECard:
@@ -62,6 +68,11 @@ class ECard:
     account_select_url = "http://10.168.103.76/accounttodayTrjn.action"
     card_status_url = "http://10.168.103.76/accountcardUser.action"
     today_transaction_url = "http://10.168.103.76/accounttodatTrjnObject.action"
+    history_transaction0_url = "http://10.168.103.76/accounthisTrjn.action"
+    history_transaction1_url = "http://10.168.103.76/accounthisTrjn1.action"
+    history_transaction2_url = "http://10.168.103.76/accounthisTrjn2.action"
+    history_transaction3_url = "http://10.168.103.76/accounthisTrjn3.action"
+    history_transaction_list_url = "http://10.168.103.76/accountconsubBrows.action"
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
@@ -84,6 +95,7 @@ class ECard:
 
     @property
     def account(self) -> Iterable[AccountInfo]:
+        """获取账号列表。"""
         if self._account_info is not None:
             yield from self._account_info
             return
@@ -103,6 +115,7 @@ class ECard:
 
     @property
     def status(self) -> CardStatus:
+        """获取校园卡状态。"""
         response = self._session.get(self.card_status_url)
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
@@ -120,19 +133,44 @@ class ECard:
 
     def get_transaction(
         self,
-        start_date: date,
-        end_date: date | None = None,
+        date1: date,
+        date2: date | None = None,
         *,
-        account: AccountInfo | None = None
+        account: AccountInfo | None = None,
     ) -> Iterable[CardTransaction]:
+        """查询流水。
+
+        在 `date1` 和 `date2` 中：
+
+        1. 如果只提供了 `date1`，那么返回 `date1` 那天的流水；
+        2. 如果 `date1` 和 `date2` 都提供了且不是同一天，那么返回两天之间的所有流水（包括 `date1` 和 `date2`）；
+        3. 如果 `date1` 和 `date2` 是同一天，那么和 (1) 相同。
+
+        由于一卡通服务的限制，最多只能查询 30 天的历史流水和 1 天的当日流水。
+        """
         if account is None:
             account = list(self.account)[0]
-        if start_date == date.today() and end_date is None:
-            return self._get_today_transaction(account)
+        if date1 == date2:
+            date1, date2 = date1, None
+        if date2 is not None:
+            if date2 > date.today() or date1 > date.today():
+                raise ValueError("date cannot be in the future")
+            if date1 >= date2:
+                date1, date2 = date2, date1
+            if date2 == date.today():
+                yield from self._get_today_transaction(account)
+                yield from self._get_history_transaction(
+                    date1, date2 - timedelta(days=1), account
+                )
+            else:
+                yield from self._get_history_transaction(date1, date2, account)
         else:
-            if end_date is None:
-                end_date = start_date
-            return self._get_history_transaction(start_date, end_date, account)
+            if date1 > date.today():
+                raise ValueError("date cannot be in the future")
+            if date1 == date.today():
+                yield from self._get_today_transaction(account)
+            else:
+                yield from self._get_history_transaction(date1, date1, account)
 
     def _get_today_transaction(self, account: AccountInfo) -> Iterable[CardTransaction]:
         response = self._session.post(
@@ -144,17 +182,79 @@ class ECard:
 
         pages_info = dom.select("tr.bl>td>div[align=center]")[0].text
         page_count = int(re.search(r"共(\d+)页", pages_info).group(1))
-        for page in range(page_count + 1):
-            yield CardTransaction()
+        for page in range(1, page_count + 1):
+            response = self._session.post(
+                self.today_transaction_url,
+                data={
+                    "pageVo.pageNum": page,
+                    "inputObject": "all",
+                    "account": account.id,
+                },
+            )
+            dom = BeautifulSoup(response.text, features="html.parser")
+            for element in dom.select("tr.listbg,tr.listbg2"):
+                tran_time = datetime.fromisoformat(
+                    element.find_all("td")[0].text.replace("/", "-")
+                )
+                tran_type = element.find_all("td")[3].text
+                shop_name = element.find_all("td")[4].text.strip()
+                amount = float(element.find_all("td")[5].text)
+                status = element.find_all("td")[8].text
+                comment = element.find_all("td")[9].text.strip()
+                yield CardTransaction(
+                    tran_time, tran_type, shop_name, amount, status, comment
+                )
 
     def _get_history_transaction(
         self, start_date: date, end_date: date, account: AccountInfo
     ) -> Iterable[CardTransaction]:
-        if end_date > start_date:
-            raise ValueError("end_date must be before start_date")
-        if (date.today() - end_date).days > 30:
+        if (date.today() - start_date).days > 30:
             raise ValueError("data can only be queried within 30 days")
-        yield CardTransaction()
+        response = self._session.get(self.history_transaction0_url)
+        response.raise_for_status()
+        response = self._session.post(
+            self.history_transaction1_url,
+            data={"account": account.id, "inputObject": "all"},
+        )
+        response.raise_for_status()
+        input_start_date = (
+            f"{start_date.year:04}{start_date.month:02}{start_date.day:02}"
+        )
+        input_end_date = f"{end_date.year:04}{end_date.month:02}{end_date.day:02}"
+        response = self._session.post(
+            self.history_transaction2_url,
+            data={"inputStartDate": input_start_date, "inputEndDate": input_end_date},
+        )
+        response.raise_for_status()
+        response = self._session.post(self.history_transaction3_url)
+        response.raise_for_status()
+
+        dom = BeautifulSoup(response.text, features="html.parser")
+        pages_info = dom.select("tr.bl>td>div[align=center]")[0].text
+        page_count = int(re.search(r"共(\d+)页", pages_info).group(1))
+        for page in range(1, page_count + 1):
+            response = self._session.post(
+                self.history_transaction_list_url,
+                data={
+                    "inputStartDate": input_start_date,
+                    "inputEndDate": input_end_date,
+                    "pageNum": page,
+                },
+            )
+            response.raise_for_status()
+            dom = BeautifulSoup(response.text, features="html.parser")
+            for element in dom.select("tr.listbg,tr.listbg2"):
+                tran_time = datetime.fromisoformat(
+                    element.find_all("td")[0].text.replace("/", "-")
+                )
+                tran_type = element.find_all("td")[3].text
+                shop_name = element.find_all("td")[4].text.strip()
+                amount = float(element.find_all("td")[5].text)
+                status = element.find_all("td")[8].text
+                comment = element.find_all("td")[9].text.strip()
+                yield CardTransaction(
+                    tran_time, tran_type, shop_name, amount, status, comment
+                )
 
 
 __all__ = ("ECard",)

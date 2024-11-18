@@ -22,7 +22,11 @@
 
 import socket
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date
 from queue import Queue
+
+import requests
+from bs4 import BeautifulSoup
 
 
 class AuthServiceError(Exception):
@@ -61,8 +65,27 @@ def test_network(timeout: float = 0.5) -> bool:
     return count / len(ip_addrs) >= 0.5
 
 
+def semester_week() -> int:
+    """获取当前教学周。
+
+    特别地，`-1` 表示暑假，`-2` 表示寒假。
+    """
+    jwc_url = "https://jwc.shiep.edu.cn/"
+    response = requests.get(jwc_url)
+    response.raise_for_status()
+    dom = BeautifulSoup(response.text, features="html.parser")
+
+    semeter_start = date.fromisoformat(dom.select("div#semester_start")[0].text)
+    semeter_end = date.fromisoformat(dom.select("div#semester_end")[0].text)
+    if (date.today() - semeter_start).days < 0 or (date.today() - semeter_end).days > 0:
+        return -1 if date.today().month > 5 else -2
+    else:
+        return (date.today() - semeter_start).days // 7
+
+
 __all__ = (
     "AuthServiceError",
     "VPNError",
     "test_network",
+    "semester_week",
 )

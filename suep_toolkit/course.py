@@ -27,7 +27,7 @@ from suep_toolkit.util import AuthServiceError, VPNError, test_network
 
 
 class CourseManagement:
-    """教学管理系统。"""
+    """教学管理信息系统。"""
 
     login_url = "https://jw.shiep.edu.cn/eams/login.action"
     course_table1_url = "https://jw.shiep.edu.cn/eams/courseTableForStd.action"

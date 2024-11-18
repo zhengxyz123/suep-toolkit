@@ -96,12 +96,10 @@ class AuthService:
     def get_captcha_image(self) -> bytes:
         """获取验证码。
 
-        若无需填写验证码，则返回长度为 0 的字节对象；否则返回一定长度的字节对象，其可直接保存为一个 jpeg 图像。
+        返回一个字节对象，可直接保存为一个 jpeg 图像。
         """
         if self._status != 1:
             raise AuthServiceError("wrong auth step")
-        if self._need_captcha:
-            return b""
 
         response = self._session.get(
             self.captcha_image_url,
