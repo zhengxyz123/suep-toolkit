@@ -20,10 +20,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import json
+import re
+
 import requests
 from bs4 import BeautifulSoup
 
 from suep_toolkit.util import AuthServiceError, VPNError, test_network
+
+
+class ElectCourseError(Exception):
+    """选课失败时引发此异常。"""
+
+    pass
+
+
+class Course:
+    """一个选课类。"""
+
+    def __init__(
+        self,
+        session: requests.Session,
+        course_name: str,
+        course_id: int,
+        course_no: str,
+    ) -> None:
+        self._session = session
+        self._name = course_name
+        self._id = course_id
+        self._no = course_no
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self._name!r}, id={self._id!r}, no={self._no!r})"
+
+    def elect(self) -> None:
+        pass
 
 
 class CourseManagement:
@@ -34,6 +65,9 @@ class CourseManagement:
     course_table2_url = (
         "https://jw.shiep.edu.cn/eams/courseTableForStd!courseTable.action"
     )
+    elect_course1_url = "https://jw.shiep.edu.cn/eams/stdElectCourse.action"
+    elect_course2_url = "https://jw.shiep.edu.cn/eams/stdElectCourse!defaultPage.action"
+    course_data_url = "https://jw.shiep.edu.cn/eams/stdElectCourse!data.action"
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
@@ -47,6 +81,29 @@ class CourseManagement:
 
         if len(dom.select("div[class=auth_page_wrapper]")) > 0:
             raise AuthServiceError("must login first")
+
+        self._session.get(self.course_table1_url).raise_for_status()
+
+    @property
+    def electable_course(self):
+        response = self._session.get(self.elect_course1_url)
+        response.raise_for_status()
+        for profile_id in re.finditer(r"electionProfile.id=(\d+)", response.text):
+            response = self._session.get(
+                self.elect_course2_url,
+                params={"electionProfile.id": profile_id.group(1)},
+            )
+            response.raise_for_status()
+            if "不在选课时间内" in response.text:
+                raise ElectCourseError("not within the time period")
+            response = self._session.get(
+                self.course_data_url, params={"profileId": profile_id.group(1)}
+            )
+            legal_json = re.sub(r"(,|{)(\w+):", r'\1"\2":', response.text[18:-1])
+            legal_json = legal_json.replace("'", '"')
+            course_json = json.loads(legal_json)
+            for course in course_json:
+                yield Course(self._session, course["name"], course["id"], course["no"])
 
 
 __all__ = ("CourseManagement",)

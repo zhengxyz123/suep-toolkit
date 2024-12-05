@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import re
-import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Iterable
@@ -76,7 +75,7 @@ class ECard:
 
     def __init__(self, session: requests.Session) -> None:
         self._session = session
-        self._account_info: tuple[AccountInfo] | None = None
+        self._account_info: list[AccountInfo] = []
         if not test_network():
             raise VPNError(
                 "you are not connected to the campus network, please turn on vpn"
@@ -96,7 +95,7 @@ class ECard:
     @property
     def account(self) -> Iterable[AccountInfo]:
         """获取账号列表。"""
-        if self._account_info is not None:
+        if len(self._account_info) > 0:
             yield from self._account_info
             return
 
@@ -104,14 +103,13 @@ class ECard:
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
-        result = []
         for element in dom.select("select#account>option"):
             account_id = int(element.attrs["value"])
             account_name = element.text.strip()
             account_name = account_name[account_name.find("---") + 3 :]
-            result.append(AccountInfo(account_id, account_name))
-        self._account_info = tuple(result)
-        yield from self._account_info
+            account = AccountInfo(account_id, account_name)
+            self._account_info.append(account)
+            yield account
 
     @property
     def status(self) -> CardStatus:
@@ -208,7 +206,7 @@ class ECard:
     def _get_history_transaction(
         self, start_date: date, end_date: date, account: AccountInfo
     ) -> Iterable[CardTransaction]:
-        if (date.today() - start_date).days > 30:
+        if (end_date - start_date).days > 30:
             raise ValueError("data can only be queried within 30 days")
         response = self._session.get(self.history_transaction0_url)
         response.raise_for_status()
@@ -217,10 +215,8 @@ class ECard:
             data={"account": account.id, "inputObject": "all"},
         )
         response.raise_for_status()
-        input_start_date = (
-            f"{start_date.year:04}{start_date.month:02}{start_date.day:02}"
-        )
-        input_end_date = f"{end_date.year:04}{end_date.month:02}{end_date.day:02}"
+        input_start_date = f"{start_date:%Y%m%d}"
+        input_end_date = f"{end_date:%Y%m%d}"
         response = self._session.post(
             self.history_transaction2_url,
             data={"inputStartDate": input_start_date, "inputEndDate": input_end_date},

@@ -18,7 +18,7 @@
   - [x] 教学周显示
   - [ ] 教学管理信息系统（需要 VPN）
 - [ ] 一站式办事大厅（<https://ehall.shiep.edu.cn>）
-  - [ ] 一卡通服务（需要 VPN）
+  - [x] 一卡通服务（需要 VPN）
 - [x] 能源管理（<http://10.50.2.206>，需要 VPN）
 - [ ] 上电云盘（<https://pan.shiep.edu.cn>, 需要 VPN） 
 - [x] 其它小工具
@@ -59,8 +59,8 @@ es = estudent.EStudent(service.session)
 # 获取基本信息：
 es.student_info
 # 获取住宿信息：
-for item in es.accommodation_record:
-    print(item)
+for record in es.accommodation_record:
+    print(record)
 ```
 
 ### 能源管理
@@ -91,8 +91,8 @@ em.recharge("C1", "A101", kwh)
 # 给自己的宿舍充值电费：
 em.recharge_my_room(kwh)
 # 获取历次的电表充值账单：
-for item in em.recharge_info:
-    print(item)
+for info in em.recharge_info:
+    print(info)
 ```
 
 **若充值电费成功会扣除校园卡里面的钱，请慎用充值功能！**
