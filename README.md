@@ -14,9 +14,9 @@
 
 - [x] 统一身份认证平台（<https://ids.shiep.edu.cn>）
 - [x] 学生事务及管理系统（<https://estudent.shiep.edu.cn>）
-- [ ] 教务处（<https://jwc.shiep.edu.cn>）
+- [x] 教务处（<https://jwc.shiep.edu.cn>）
   - [x] 教学周显示
-  - [ ] 教学管理信息系统（需要 VPN）
+  - [x] 教学管理信息系统（需要 VPN）
 - [ ] 一站式办事大厅（<https://ehall.shiep.edu.cn>）
   - [x] 一卡通服务（需要 VPN）
 - [x] 能源管理（<http://10.50.2.206>，需要 VPN）
@@ -61,6 +61,22 @@ es.student_info
 # 获取住宿信息：
 for record in es.accommodation_record:
     print(record)
+```
+
+### 教学管理信息系统
+
+`suep_toolkit.course` 提供了访问教学管理系统的功能：
+
+```python
+from suep_toolkit import course
+
+course_system = course.CourseManagement(service.session)
+# 获取选课列表（在选课期间可用）
+course_list = list(course_system.electable_course)
+# 选课
+course_list[0].elect()
+# 退课
+course_list[0].cancel()
 ```
 
 ### 能源管理

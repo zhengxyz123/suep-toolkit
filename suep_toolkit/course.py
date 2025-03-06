@@ -90,7 +90,20 @@ class Course:
             raise ElectCourseError(result)
 
     def cancel(self) -> None:
-        raise NotImplementedError("not implemented")
+        response = self._session.post(
+            self.operator_url,
+            params={"profileId": self._profile_id},
+            data={"optype": "false", "operator0": f"{self._id}:false"},
+        )
+        response.raise_for_status()
+
+        dom = BeautifulSoup(response.text, features="html.parser")
+        try:
+            result = dom.select("table>tr>td>div")[0].text.strip()
+        except:
+            raise ElectCourseError("其它错误")
+        if any([s in result for s in ["失败", "内部错误", "过快点击"]]):
+            raise ElectCourseError(result)
 
 
 class CourseManagement:
@@ -129,7 +142,7 @@ class CourseManagement:
         for profile_id in re.finditer(r"electionProfile.id=(\d+)", response.text):
             response = self._session.get(
                 self.elect_course2_url,
-                params={"electionProfile.id": profile_id.group(1)}
+                params={"electionProfile.id": profile_id.group(1)},
             )
             response.raise_for_status()
             if "不在选课时间内" in response.text:
