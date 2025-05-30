@@ -78,6 +78,7 @@ class Course:
             self.operator_url,
             params={"profileId": self._profile_id},
             data={"optype": "true", "operator0": f"{self._id}:true:0"},
+            verify=False,
         )
         response.raise_for_status()
 
@@ -94,6 +95,7 @@ class Course:
             self.operator_url,
             params={"profileId": self._profile_id},
             data={"optype": "false", "operator0": f"{self._id}:false"},
+            verify=False,
         )
         response.raise_for_status()
 
@@ -127,28 +129,31 @@ class CourseManagement:
             raise VPNError(
                 "you are not connected to the campus network, please turn on vpn"
             ) from error
-        response = self._session.get(self.login_url)
+        response = self._session.get(self.login_url, verify=False)
         response.raise_for_status()
         dom = BeautifulSoup(response.text, features="html.parser")
 
         if len(dom.select("div[class=auth_page_wrapper]")) > 0:
             raise AuthServiceError("must login first")
 
-        self._session.get(self.course_table1_url).raise_for_status()
+        self._session.get(self.course_table1_url, verify=False).raise_for_status()
 
     def _get_course_list(self) -> None:
-        response = self._session.get(self.elect_course1_url)
+        response = self._session.get(self.elect_course1_url, verify=False)
         response.raise_for_status()
         for profile_id in re.finditer(r"electionProfile.id=(\d+)", response.text):
             response = self._session.get(
                 self.elect_course2_url,
                 params={"electionProfile.id": profile_id.group(1)},
+                verify=False,
             )
             response.raise_for_status()
             if "不在选课时间内" in response.text:
                 raise ElectCourseError("not within the time period")
             response = self._session.get(
-                self.course_data_url, params={"profileId": profile_id.group(1)}
+                self.course_data_url,
+                params={"profileId": profile_id.group(1)},
+                verify=False,
             )
             legal_json_str = re.sub(
                 r"(,|{)(\w+):", r'\1"\2":', response.text[18:-1]

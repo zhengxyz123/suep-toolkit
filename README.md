@@ -1,8 +1,6 @@
-> 本项目仍在开发中，请勿将其用于生产环境！
-
 # 上电工具箱
 
-各位上海电力大学的学子们，**上电工具箱**（suep-toolkit）将上海电力大学提供的学生事务及管理系统、教务系统和能源管理等分散在各处的系统整合到一个 Python 包中，方便大家使用。
+各位上海电力大学的学子们，**上电工具箱**（suep-toolkit）将上海电力大学提供的一卡通服务、教务系统和能源管理等分散在各处的系统整合到一个 Python 包中，方便大家使用。
 
 我的博客《[论上海电力大学校园网](https://zhengxyz123.github.io/coding/suep-website/)》详细讨论了各系统的前端逻辑。
 
@@ -77,6 +75,12 @@ course_list = list(course_system.electable_course)
 course_list[0].elect()
 # 退课
 course_list[0].cancel()
+```
+
+项目的 `examples/elect_course.py` 文件提供了一个简单的自动化选课功能，可通过如下命令使用：
+
+```bash
+python -m examples.elect_course <一个包含了一堆课程序号的文件>
 ```
 
 ### 能源管理

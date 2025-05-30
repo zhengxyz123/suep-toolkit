@@ -27,6 +27,7 @@
 import getpass
 import os
 import sys
+import warnings
 from pathlib import Path
 
 from suep_toolkit import auth
@@ -35,6 +36,7 @@ from suep_toolkit.util import AuthServiceError, VPNError
 
 
 def main(courses_file: Path) -> int:
+    warnings.simplefilter("ignore")
     if not courses_file.exists():
         print(f"文件'{courses_file}'不存在")
         return 1
