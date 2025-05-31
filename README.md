@@ -54,9 +54,9 @@ service.logout()
 from suep_toolkit import estudent
 
 es = estudent.EStudent(service.session)
-# 获取基本信息：
+# 获取基本信息
 es.student_info
-# 获取住宿信息：
+# 获取住宿信息
 for record in es.accommodation_record:
     print(record)
 ```
@@ -83,6 +83,8 @@ course_list[0].cancel()
 python -m examples.elect_course <一个包含了一堆课程序号的文件>
 ```
 
+> 如果不想每次运行时都输入用户名和密码，你可以将用户名和密码放在 `SUEP_USERNAME` 和 `SUEP_PASSWORD` 环境变量中。
+
 ### 能源管理
 
 `suep_toolkit.electricity` 提供了访问能源管理系统的功能。
@@ -102,15 +104,15 @@ service = auth.AuthService("用户名", "密码", service="http://10.50.2.206:80
 from suep_toolkit import electricity
 
 em = electricity.ElectricityManagement(service.session)
-# 获取电表参数：
+# 获取电表参数
 em.meter_state
 # 要充值的电量，单位为千瓦时，类型为正整数
 kwh = 100
-# 充值电费（以一号学生公寓的 A101 房间为例）：
+# 充值电费（以一号学生公寓的 A101 房间为例）
 em.recharge("C1", "A101", kwh)
-# 给自己的宿舍充值电费：
+# 给自己的宿舍充值电费
 em.recharge_my_room(kwh)
-# 获取历次的电表充值账单：
+# 获取历次的电表充值账单
 for info in em.recharge_info:
     print(info)
 ```
@@ -130,12 +132,12 @@ from datetime import date
 from suep_toolkit.ehall import ecard
 
 my_card = ecard.ECard(service.session)
-# 获取一卡通状态，包括余额以及冻结、挂失状态：
+# 获取一卡通状态，包括余额以及冻结、挂失状态
 my_card.status
-# 获取账号列表，不过正常情况下每人只有一个账号：
+# 获取账号列表，不过正常情况下每人只有一个账号
 for account in my_card.account:
     print(account)
-# 获取流水：
+# 获取流水
 for transaction in my_card.get_transaction(date.today()):
     print(transaction)
 ```
@@ -149,8 +151,8 @@ for transaction in my_card.get_transaction(date.today()):
 ```python
 from suep_toolkit import util
 
-# 测试设备是否连接到校园网：
+# 测试设备是否连接到校园网
 util.test_network()
-# 返回当前教学周：
+# 返回当前教学周
 util.semester_week()
 ```

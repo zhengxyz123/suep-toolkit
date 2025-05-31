@@ -76,8 +76,12 @@ def main(courses_file: Path) -> int:
     print("已选课程:")
     for course in wanted_list:
         print(f"{course._no} - {course.name}")
-    print("按下回车开始选课...")
-    input()
+    print("按下回车开始选课: ", end="")
+    try:
+        input()
+    except KeyboardInterrupt:
+        print()
+        return 0
     while len(success_list) != len(wanted_list):
         for course in wanted_list:
             if course.id in success_list:
